@@ -10,11 +10,17 @@ import androidx.core.view.WindowInsetsCompat;
 
 import android.widget.GridView;
 import android.widget.TextView;
+import android.widget.Button;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
+
+    private int currentMonth;
+    private int currentYear;
+    private TextView monthYearText;
+    private GridView calendarGridView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -27,14 +33,37 @@ public class MainActivity extends AppCompatActivity {
             return insets;
         });
 
-        GridView calendarGridView = findViewById(R.id.calendarGridView);
-        TextView monthYearText = findViewById(R.id.tvMonthYear);
+        calendarGridView = findViewById(R.id.calendarGridView);
+        monthYearText = findViewById(R.id.tvMonthYear);
 
         Calendar calendar = Calendar.getInstance();
-        int currentMonth = calendar.get(Calendar.MONTH);
-        int currentYear = calendar.get(Calendar.YEAR);
+        currentMonth = calendar.get(Calendar.MONTH);
+        currentYear = calendar.get(Calendar.YEAR);
 
-// Get days
+        Button btnPrev = findViewById(R.id.btnPreviousMonth);
+        Button btnNext = findViewById(R.id.btnNextMonth);
+
+        btnPrev.setOnClickListener(v -> {
+            currentMonth--;
+            if (currentMonth < 0) {
+                currentMonth = 11;
+                currentYear--;
+            }
+            loadCalendar();
+        });
+
+        btnNext.setOnClickListener(v -> {
+            currentMonth++;
+            if (currentMonth > 11) {
+                currentMonth = 0;
+                currentYear++;
+            }
+            loadCalendar();
+        });
+
+        loadCalendar();
+
+        // Get days
         ArrayList<String> daysInMonth = new ArrayList<>();
         Calendar tempCal = Calendar.getInstance();
         tempCal.set(Calendar.YEAR, currentYear);
@@ -48,12 +77,11 @@ public class MainActivity extends AppCompatActivity {
             daysInMonth.add(""); // Blank cells for alignment
         }
 
-// ✅ THIS WAS MISSING:
         for (int i = 1; i <= maxDay; i++) {
             daysInMonth.add(String.valueOf(i));
         }
 
-// Add trailing blanks
+        // Add trailing blanks
         int totalCells = daysInMonth.size();
         while (totalCells % 7 != 0) {
             daysInMonth.add("");
@@ -73,4 +101,43 @@ public class MainActivity extends AppCompatActivity {
                 "July", "August", "September", "October", "November", "December"};
         monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
     }
+
+    private void loadCalendar() {
+        ArrayList<String> daysInMonth = new ArrayList<>();
+
+        Calendar tempCal = Calendar.getInstance();
+        tempCal.set(Calendar.YEAR, currentYear);
+        tempCal.set(Calendar.MONTH, currentMonth);
+        tempCal.set(Calendar.DAY_OF_MONTH, 1);
+
+        int firstDayOfWeek = tempCal.get(Calendar.DAY_OF_WEEK) - 1;
+        int maxDay = tempCal.getActualMaximum(Calendar.DAY_OF_MONTH);
+
+        for (int i = 0; i < firstDayOfWeek; i++) {
+            daysInMonth.add("");
+        }
+
+        for (int i = 1; i <= maxDay; i++) {
+            daysInMonth.add(String.valueOf(i));
+        }
+
+        while (daysInMonth.size() % 7 != 0) {
+            daysInMonth.add("");
+        }
+
+        // Placeholder: simulate edited days (you'll update this later)
+        ArrayList<Integer> editedPositions = new ArrayList<>();
+        if (currentMonth == 6) { // July
+            editedPositions.add(firstDayOfWeek + 1);  // Day 2
+            editedPositions.add(firstDayOfWeek + 8);  // Day 9
+        }
+
+        CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, editedPositions);
+        calendarGridView.setAdapter(adapter);
+
+        String[] monthNames = {"January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"};
+        monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
+    }
+
 }
