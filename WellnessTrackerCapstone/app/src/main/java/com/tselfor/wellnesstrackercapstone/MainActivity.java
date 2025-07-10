@@ -11,12 +11,12 @@ import androidx.core.view.WindowInsetsCompat;
 import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Button;
+import android.content.Intent;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 
 public class MainActivity extends AppCompatActivity {
-
     private int currentMonth;
     private int currentYear;
     private TextView monthYearText;
@@ -125,19 +125,36 @@ public class MainActivity extends AppCompatActivity {
             daysInMonth.add("");
         }
 
-        // Placeholder: simulate edited days (you'll update this later)
+        // Simulate edited days for testing
         ArrayList<Integer> editedPositions = new ArrayList<>();
         if (currentMonth == 6) { // July
             editedPositions.add(firstDayOfWeek + 1);  // Day 2
             editedPositions.add(firstDayOfWeek + 8);  // Day 9
         }
 
+// Set up the calendar grid with adapter
         CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, editedPositions);
         calendarGridView.setAdapter(adapter);
 
+        // Update the month/year label
         String[] monthNames = {"January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"};
         monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
-    }
 
+        // Handle cell click to open SummaryActivity
+        calendarGridView.setOnItemClickListener((parent, view, position, id) -> {
+            String dayText = ((TextView) view.findViewById(R.id.calendarDay)).getText().toString();
+
+            if (!dayText.isEmpty()) {
+                String date = String.format("%02d/%02d/%04d",
+                        currentMonth + 1,
+                        Integer.parseInt(dayText),
+                        currentYear);
+
+                Intent intent = new Intent(MainActivity.this, SummaryActivity.class);
+                intent.putExtra("selectedDate", date);
+                startActivity(intent);
+            }
+        });
+    }
 }
