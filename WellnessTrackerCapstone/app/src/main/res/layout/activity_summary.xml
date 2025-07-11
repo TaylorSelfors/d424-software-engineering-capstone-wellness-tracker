@@ -11,7 +11,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Summary for:"
-        android:textSize="20sp"
+        android:textSize="26sp"
         android:textStyle="bold" />
 
     <!-- SLEEP SECTION -->
@@ -66,44 +66,115 @@
             android:text=""
             android:textColor="#555555"
             android:paddingTop="8dp" />
+    </LinearLayout>
 
-        <!-- FOOD AND WATER SECTION -->
+    <!-- FOOD AND WATER SECTION -->
+    <LinearLayout
+        android:id="@+id/foodWaterSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Food and Water Intake"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etWater"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="Water Intake (oz)"
+            android:inputType="number"
+            android:layout_marginTop="8dp" />
+
+        <Button
+            android:id="@+id/btnAddMeal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Meal"
+            android:layout_marginTop="12dp" />
+
         <LinearLayout
-            android:id="@+id/foodWaterSection"
+            android:id="@+id/mealListLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingTop="24dp">
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Food and Water Intake"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+    <!-- EXERCISE SECTION -->
+    <LinearLayout
+        android:id="@+id/exerciseSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="24dp">
 
-            <EditText
-                android:id="@+id/etWater"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:hint="Water Intake (oz)"
-                android:inputType="number"
-                android:layout_marginTop="8dp" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Exercise"
+            android:textSize="20sp"
+            android:textStyle="bold" />
 
-            <Button
-                android:id="@+id/btnAddMeal"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Add Meal"
-                android:layout_marginTop="12dp" />
+        <Button
+            android:id="@+id/btnAddExercise"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Add Exercise"
+            android:layout_marginTop="12dp" />
 
-            <LinearLayout
-                android:id="@+id/mealListLayout"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:layout_marginTop="8dp" />
-        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/exerciseListLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:layout_marginTop="8dp" />
+    </LinearLayout>
+
+    <!-- MOOD AND JOURNAL SECTION -->
+    <LinearLayout
+        android:id="@+id/moodSection"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:paddingTop="24dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Mood"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinnerMood"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Journal Entry (optional)"
+            android:layout_marginTop="16dp"
+            android:textStyle="bold" />
+
+        <EditText
+            android:id="@+id/etJournal"
+            android:layout_width="match_parent"
+            android:layout_height="120dp"
+            android:hint="Write about your day..."
+            android:inputType="textMultiLine"
+            android:gravity="top"
+            android:background="@android:drawable/edit_text"
+            android:padding="12dp"
+            android:layout_marginTop="4dp"/>
     </LinearLayout>
 
 </LinearLayout>
+

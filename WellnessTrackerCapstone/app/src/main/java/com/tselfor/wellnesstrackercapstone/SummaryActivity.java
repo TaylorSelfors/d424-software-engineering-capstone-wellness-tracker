@@ -2,10 +2,15 @@ package com.tselfor.wellnesstrackercapstone;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.Spinner;
 import android.widget.TextView;
+
+import java.util.Arrays;
+import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
 
@@ -53,6 +58,7 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
+        // Food and water
         EditText etWater = findViewById(R.id.etWater);
         Button btnAddMeal = findViewById(R.id.btnAddMeal);
         LinearLayout mealListLayout = findViewById(R.id.mealListLayout);
@@ -60,27 +66,34 @@ public class SummaryActivity extends AppCompatActivity {
         btnAddMeal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // Create new input group for a meal
                 LinearLayout mealRow = new LinearLayout(SummaryActivity.this);
                 mealRow.setOrientation(LinearLayout.HORIZONTAL);
                 mealRow.setLayoutParams(new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.MATCH_PARENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT));
 
-                EditText etType = new EditText(SummaryActivity.this);
-                etType.setHint("Type");
-                etType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                // Spinner for Meal Type
+                Spinner spinnerType = new Spinner(SummaryActivity.this);
+                ArrayAdapter<String> mealTypeAdapter = new ArrayAdapter<>(SummaryActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        new String[]{"Breakfast", "Lunch", "Dinner", "Snack"});
+                mealTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerType.setAdapter(mealTypeAdapter);
+                spinnerType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
+                // EditText for Calories
                 EditText etCalories = new EditText(SummaryActivity.this);
                 etCalories.setHint("Calories");
                 etCalories.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
                 etCalories.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
+                // EditText for Time
                 EditText etTime = new EditText(SummaryActivity.this);
                 etTime.setHint("Time");
                 etTime.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
-                mealRow.addView(etType);
+                // Add views to the row
+                mealRow.addView(spinnerType);
                 mealRow.addView(etCalories);
                 mealRow.addView(etTime);
 
@@ -88,5 +101,47 @@ public class SummaryActivity extends AppCompatActivity {
             }
         });
 
+        // Exercise
+        Button btnAddExercise = findViewById(R.id.btnAddExercise);
+        LinearLayout exerciseListLayout = findViewById(R.id.exerciseListLayout);
+
+        btnAddExercise.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                LinearLayout exerciseRow = new LinearLayout(SummaryActivity.this);
+                exerciseRow.setOrientation(LinearLayout.HORIZONTAL);
+                exerciseRow.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                EditText etDuration = new EditText(SummaryActivity.this);
+                etDuration.setHint("Minutes");
+                etDuration.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                etDuration.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                Spinner spinnerIntensity = new Spinner(SummaryActivity.this);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(SummaryActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        new String[]{"Low", "Medium", "High"});
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerIntensity.setAdapter(adapter);
+                spinnerIntensity.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                exerciseRow.addView(etDuration);
+                exerciseRow.addView(spinnerIntensity);
+
+                exerciseListLayout.addView(exerciseRow);
+            }
+        });
+
+        // Mood
+        Spinner spinnerMood = findViewById(R.id.spinnerMood);
+
+        List<String> moodList = Arrays.asList(
+                "None", "Fearful", "Angry", "Disgusted", "Sad", "Happy", "Surprised", "Bad"
+        );
+
+        MoodAdapter moodAdapter = new MoodAdapter(this, moodList);
+        spinnerMood.setAdapter(moodAdapter);
     }
 }
