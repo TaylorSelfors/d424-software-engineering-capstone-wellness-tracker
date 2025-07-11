@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -51,5 +52,41 @@ public class SummaryActivity extends AppCompatActivity {
                 }
             }
         });
+
+        EditText etWater = findViewById(R.id.etWater);
+        Button btnAddMeal = findViewById(R.id.btnAddMeal);
+        LinearLayout mealListLayout = findViewById(R.id.mealListLayout);
+
+        btnAddMeal.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // Create new input group for a meal
+                LinearLayout mealRow = new LinearLayout(SummaryActivity.this);
+                mealRow.setOrientation(LinearLayout.HORIZONTAL);
+                mealRow.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                EditText etType = new EditText(SummaryActivity.this);
+                etType.setHint("Type");
+                etType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                EditText etCalories = new EditText(SummaryActivity.this);
+                etCalories.setHint("Calories");
+                etCalories.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                etCalories.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                EditText etTime = new EditText(SummaryActivity.this);
+                etTime.setHint("Time");
+                etTime.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                mealRow.addView(etType);
+                mealRow.addView(etCalories);
+                mealRow.addView(etTime);
+
+                mealListLayout.addView(mealRow);
+            }
+        });
+
     }
 }
