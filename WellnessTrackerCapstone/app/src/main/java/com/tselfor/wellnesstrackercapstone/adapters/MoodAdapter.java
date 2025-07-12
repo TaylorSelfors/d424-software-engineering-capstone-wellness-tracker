@@ -1,4 +1,4 @@
-package com.tselfor.wellnesstrackercapstone;
+package com.tselfor.wellnesstrackercapstone.adapters;
 
 import android.content.Context;
 import android.content.res.ColorStateList;
@@ -8,6 +8,8 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.TextView;
+
+import com.tselfor.wellnesstrackercapstone.R;
 
 import java.util.List;
 

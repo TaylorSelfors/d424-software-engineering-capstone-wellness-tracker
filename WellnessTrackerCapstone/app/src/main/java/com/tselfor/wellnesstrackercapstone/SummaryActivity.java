@@ -8,11 +8,18 @@ import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.Spinner;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import java.util.Arrays;
 import java.util.List;
 
 import androidx.appcompat.app.AppCompatActivity;
+
+import com.tselfor.wellnesstrackercapstone.adapters.MoodAdapter;
+import com.tselfor.wellnesstrackercapstone.data.DayEntry;
+import com.tselfor.wellnesstrackercapstone.database.AppDatabase;
+import com.tselfor.wellnesstrackercapstone.database.DatabaseClient;
+import com.tselfor.wellnesstrackercapstone.dao.DayEntryDao;
 
 public class SummaryActivity extends AppCompatActivity {
 
@@ -40,11 +47,13 @@ public class SummaryActivity extends AppCompatActivity {
 
                 try {
                     hours = Integer.parseInt(etHours.getText().toString());
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
 
                 try {
                     minutes = Integer.parseInt(etMinutes.getText().toString());
-                } catch (NumberFormatException ignored) {}
+                } catch (NumberFormatException ignored) {
+                }
 
                 double totalSleep = hours + (minutes / 60.0);
 
@@ -76,7 +85,7 @@ public class SummaryActivity extends AppCompatActivity {
                 Spinner spinnerType = new Spinner(SummaryActivity.this);
                 ArrayAdapter<String> mealTypeAdapter = new ArrayAdapter<>(SummaryActivity.this,
                         android.R.layout.simple_spinner_item,
-                        new String[]{"Breakfast", "Lunch", "Dinner", "Snack"});
+                        new String[]{"Breakfast", "Lunch", "Dinner", "Snack", "Beverage"});
                 mealTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerType.setAdapter(mealTypeAdapter);
                 spinnerType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
@@ -143,5 +152,49 @@ public class SummaryActivity extends AppCompatActivity {
 
         MoodAdapter moodAdapter = new MoodAdapter(this, moodList);
         spinnerMood.setAdapter(moodAdapter);
+
+        // Save summary
+        Button btnSave = findViewById(R.id.btnSaveSummary);
+        EditText etJournal = findViewById(R.id.etJournal);
+
+        btnSave.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                int sleepHrs = 0;
+                int sleepMin = 0;
+                int water = 0;
+
+                try {
+                    sleepHrs = Integer.parseInt(etHours.getText().toString());
+                } catch (NumberFormatException ignored) {
+                }
+
+                try {
+                    sleepMin = Integer.parseInt(etMinutes.getText().toString());
+                } catch (NumberFormatException ignored) {
+                }
+
+                try {
+                    water = Integer.parseInt(etWater.getText().toString());
+                } catch (NumberFormatException ignored) {
+                }
+
+                String mood = spinnerMood.getSelectedItem().toString();
+                String journal = etJournal.getText().toString();
+
+                DayEntry entry = new DayEntry();
+                entry.date = selectedDate;
+                entry.sleepHours = sleepHrs;
+                entry.sleepMinutes = sleepMin;
+                entry.waterOunces = water;
+                entry.mood = mood;
+                entry.journal = journal;
+
+                AppDatabase db = DatabaseClient.getInstance(SummaryActivity.this).getAppDatabase();
+                db.dayEntryDao().insert(entry);
+
+                Toast.makeText(SummaryActivity.this, "Summary saved!", Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 }

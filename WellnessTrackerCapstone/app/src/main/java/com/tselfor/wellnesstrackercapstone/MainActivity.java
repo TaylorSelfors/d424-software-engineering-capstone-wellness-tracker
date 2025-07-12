@@ -13,6 +13,8 @@ import android.widget.TextView;
 import android.widget.Button;
 import android.content.Intent;
 
+import com.tselfor.wellnesstrackercapstone.adapters.CalendarAdapter;
+
 import java.util.ArrayList;
 import java.util.Calendar;
 
@@ -125,12 +127,8 @@ public class MainActivity extends AppCompatActivity {
             daysInMonth.add("");
         }
 
-        // Simulate edited days for testing
         ArrayList<Integer> editedPositions = new ArrayList<>();
-        if (currentMonth == 6) { // July
-            editedPositions.add(firstDayOfWeek + 1);  // Day 2
-            editedPositions.add(firstDayOfWeek + 8);  // Day 9
-        }
+// TODO: Load actual edited dates from Room database later
 
 // Set up the calendar grid with adapter
         CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, editedPositions);

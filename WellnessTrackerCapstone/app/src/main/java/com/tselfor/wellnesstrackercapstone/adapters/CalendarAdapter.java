@@ -1,4 +1,4 @@
-package com.tselfor.wellnesstrackercapstone;
+package com.tselfor.wellnesstrackercapstone.adapters;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -8,6 +8,8 @@ import android.widget.BaseAdapter;
 import android.widget.TextView;
 
 import androidx.core.content.ContextCompat;
+
+import com.tselfor.wellnesstrackercapstone.R;
 
 import java.util.ArrayList;
 
