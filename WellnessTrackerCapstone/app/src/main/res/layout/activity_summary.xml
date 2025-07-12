@@ -20,6 +20,16 @@
             android:textSize="26sp"
             android:textStyle="bold" />
 
+        <!-- BACK TO HOME -->
+        <Button
+            android:id="@+id/btnBackHome"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="← Back"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="8dp"
+            />
+
         <!-- SLEEP SECTION -->
         <LinearLayout
             android:id="@+id/sleepSection"
@@ -198,5 +208,14 @@
             android:layout_height="wrap_content"
             android:text="Save Summary"
             android:layout_marginTop="24dp" />
+
+        <!-- SHARE BUTTON -->
+        <Button
+            android:id="@+id/btnShareSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Share Summary"
+            android:layout_marginTop="12dp"
+            />
     </LinearLayout>
 </ScrollView>
