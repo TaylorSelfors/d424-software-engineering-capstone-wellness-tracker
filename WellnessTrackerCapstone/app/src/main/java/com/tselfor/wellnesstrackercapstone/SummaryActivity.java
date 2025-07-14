@@ -1,6 +1,7 @@
 package com.tselfor.wellnesstrackercapstone;
 
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
@@ -198,14 +199,92 @@ public class SummaryActivity extends AppCompatActivity {
 
             // Load meals
             List<MealEntry> meals = db.mealEntryDao().getMealsForDate(selectedDate);
+            Log.d("DB_TEST", "Loading meals for " + selectedDate);
+            Log.d("DB_TEST", "Found " + meals.size() + " meals");
             for (MealEntry meal : meals) {
-                // [meal row creation code goes here...]
+                Log.d("DB_TEST", "Meal loaded: " + meal.mealType + ", " + meal.timeEaten + ", " + meal.date);
+
+                LinearLayout mealRow = new LinearLayout(SummaryActivity.this);
+                mealRow.setOrientation(LinearLayout.HORIZONTAL);
+                mealRow.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+
+                Spinner spinnerType = new Spinner(SummaryActivity.this);
+                ArrayAdapter<String> mealTypeAdapter = new ArrayAdapter<>(SummaryActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        new String[]{"Breakfast", "Lunch", "Dinner", "Snack", "Beverage"});
+                mealTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerType.setAdapter(mealTypeAdapter);
+                spinnerType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                spinnerType.setSelection(mealTypeAdapter.getPosition(meal.mealType));
+
+                EditText etCalories = new EditText(SummaryActivity.this);
+                etCalories.setHint("Calories");
+                etCalories.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                etCalories.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                etCalories.setText(String.valueOf(meal.calories));
+
+                EditText etTime = new EditText(SummaryActivity.this);
+                etTime.setHint("Time");
+                etTime.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                etTime.setText(meal.timeEaten);
+
+                Button btnDelete = new Button(SummaryActivity.this);
+                btnDelete.setText("Delete");
+                btnDelete.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                btnDelete.setOnClickListener(delView -> ((LinearLayout) mealRow.getParent()).removeView(mealRow));
+
+                mealRow.addView(spinnerType);
+                mealRow.addView(etCalories);
+                mealRow.addView(etTime);
+                mealRow.addView(btnDelete);
+
+                mealListLayout.addView(mealRow);
             }
 
             // Load exercises
             List<ExerciseEntry> exercises = db.exerciseEntryDao().getExercisesForDate(selectedDate);
+            Log.d("DB_TEST", "Found " + exercises.size() + " exercises");
             for (ExerciseEntry ex : exercises) {
-                // [exercise row creation code goes here...]
+                Log.d("DB_TEST", "Exercise loaded: " + ex.duration + " mins, " + ex.intensity + ", " + ex.date);
+
+                LinearLayout exerciseRow = new LinearLayout(SummaryActivity.this);
+                exerciseRow.setOrientation(LinearLayout.HORIZONTAL);
+                exerciseRow.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.MATCH_PARENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                exerciseRow.setPadding(0, 8, 0, 8);
+
+                EditText etDuration = new EditText(SummaryActivity.this);
+                etDuration.setHint("Minutes");
+                etDuration.setInputType(InputType.TYPE_CLASS_NUMBER);
+                etDuration.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                etDuration.setText(String.valueOf(ex.duration));
+
+                Spinner spinnerIntensity = new Spinner(SummaryActivity.this);
+                ArrayAdapter<String> adapter = new ArrayAdapter<>(SummaryActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        new String[]{"Low Intensity", "Moderate Intensity", "High Intensity"});
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerIntensity.setAdapter(adapter);
+                spinnerIntensity.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                spinnerIntensity.setSelection(adapter.getPosition(ex.intensity));
+
+                Button btnDelete = new Button(SummaryActivity.this);
+                btnDelete.setText("Delete");
+                btnDelete.setLayoutParams(new LinearLayout.LayoutParams(
+                        LinearLayout.LayoutParams.WRAP_CONTENT,
+                        LinearLayout.LayoutParams.WRAP_CONTENT));
+                btnDelete.setOnClickListener(delView -> ((LinearLayout) exerciseRow.getParent()).removeView(exerciseRow));
+
+                exerciseRow.addView(etDuration);
+                exerciseRow.addView(spinnerIntensity);
+                exerciseRow.addView(btnDelete);
+
+                exerciseListLayout.addView(exerciseRow);
             }
         }
 
@@ -250,11 +329,7 @@ public class SummaryActivity extends AppCompatActivity {
 
                 Toast.makeText(SummaryActivity.this, "Summary saved!", Toast.LENGTH_SHORT).show();
 
-                // Clear old meals and exercises
-                db.mealEntryDao().deleteMealsForDate(selectedDate);
-                db.exerciseEntryDao().deleteExercisesForDate(selectedDate);
-
-// Save meals
+                // Save meals
                 for (int i = 0; i < mealListLayout.getChildCount(); i++) {
                     LinearLayout row = (LinearLayout) mealListLayout.getChildAt(i);
                     Spinner type = (Spinner) row.getChildAt(0);
@@ -271,9 +346,11 @@ public class SummaryActivity extends AppCompatActivity {
                     }
                     meal.timeEaten = time.getText().toString();
                     db.mealEntryDao().insert(meal);
+
+                    Log.d("DB_TEST", "Meal inserted: " + meal.mealType + ", " + meal.calories + " cal, " + meal.timeEaten + ", date=" + meal.date);
                 }
 
-// Save exercises
+                // Save exercises
                 for (int i = 0; i < exerciseListLayout.getChildCount(); i++) {
                     LinearLayout row = (LinearLayout) exerciseListLayout.getChildAt(i);
                     EditText duration = (EditText) row.getChildAt(0);
@@ -288,6 +365,8 @@ public class SummaryActivity extends AppCompatActivity {
                     }
                     ex.intensity = intensity.getSelectedItem().toString();
                     db.exerciseEntryDao().insert(ex);
+
+                    Log.d("DB_TEST", "Exercise inserted: " + ex.duration + " mins, " + ex.intensity + ", date=" + ex.date);
                 }
 
 
