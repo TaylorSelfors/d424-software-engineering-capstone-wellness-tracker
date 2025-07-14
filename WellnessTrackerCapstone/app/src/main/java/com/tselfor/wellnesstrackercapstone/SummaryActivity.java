@@ -329,6 +329,10 @@ public class SummaryActivity extends AppCompatActivity {
 
                 Toast.makeText(SummaryActivity.this, "Summary saved!", Toast.LENGTH_SHORT).show();
 
+                // Deletes old meals for a date before adding new ones
+                db.mealEntryDao().deleteMealsForDate(selectedDate);
+                db.exerciseEntryDao().deleteExercisesForDate(selectedDate);
+
                 // Save meals
                 for (int i = 0; i < mealListLayout.getChildCount(); i++) {
                     LinearLayout row = (LinearLayout) mealListLayout.getChildAt(i);

@@ -1,21 +1,18 @@
 package com.tselfor.wellnesstrackercapstone;
 
 import android.os.Bundle;
+import android.util.Log;
+import android.widget.GridView;
+import android.widget.TextView;
+import android.widget.Button;
+import android.content.Intent;
+import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.graphics.Insets;
 import androidx.core.view.ViewCompat;
 import androidx.core.view.WindowInsetsCompat;
-
-import android.widget.GridView;
-import android.widget.TextView;
-import android.widget.Button;
-import android.content.Intent;
-import android.view.View;
-import android.widget.Toast;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 
 import com.tselfor.wellnesstrackercapstone.adapters.CalendarAdapter;
 import com.tselfor.wellnesstrackercapstone.database.AppDatabase;
@@ -25,14 +22,17 @@ import com.tselfor.wellnesstrackercapstone.data.DayEntry;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
-import java.util.Map;
 import java.util.List;
+import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
+
     private int currentMonth;
     private int currentYear;
     private TextView monthYearText;
     private GridView calendarGridView;
+    private final String[] monthNames = {"January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +55,7 @@ public class MainActivity extends AppCompatActivity {
 
         Button btnPrev = findViewById(R.id.btnPreviousMonth);
         Button btnNext = findViewById(R.id.btnNextMonth);
+        Button btnGenerate = findViewById(R.id.btnGenerateReport);
 
         btnPrev.setOnClickListener(v -> {
             currentMonth--;
@@ -74,7 +75,13 @@ public class MainActivity extends AppCompatActivity {
             loadCalendar();
         });
 
-        // Load the current month's calendar
+        btnGenerate.setOnClickListener(v -> {
+            String report = generateMonthlyReport(currentMonth, currentYear);
+            Log.d("MONTHLY_REPORT", report);
+            // You could also show in a dialog or share via intent here
+        });
+
+        // Initial load
         loadCalendar();
     }
 
@@ -87,19 +94,19 @@ public class MainActivity extends AppCompatActivity {
         tempCal.set(Calendar.MONTH, currentMonth);
         tempCal.set(Calendar.DAY_OF_MONTH, 1);
 
-        int firstDayOfWeek = tempCal.get(Calendar.DAY_OF_WEEK) - 1; // Sunday = 0
+        int firstDayOfWeek = tempCal.get(Calendar.DAY_OF_WEEK) - 1;
         int maxDay = tempCal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        // Padding before 1st
         for (int i = 0; i < firstDayOfWeek; i++) {
             daysInMonth.add("");
         }
 
         int startOffset = daysInMonth.size();
 
-        // Fetch entries from Room DB
         AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
         List<DayEntry> entries = db.dayEntryDao().getAllEntries();
+
+        Map<String, Integer> moodCountMap = new HashMap<>();
 
         for (int day = 1; day <= maxDay; day++) {
             daysInMonth.add(String.valueOf(day));
@@ -107,12 +114,16 @@ public class MainActivity extends AppCompatActivity {
 
             for (DayEntry entry : entries) {
                 if (entry.date.equals(dateStr)) {
-                    moodMap.put(startOffset + (day - 1), entry.mood); // index in GridView
+                    moodMap.put(startOffset + (day - 1), entry.mood);
+
+                    // Count mood occurrences
+                    if (!entry.mood.equals("None")) {
+                        moodCountMap.put(entry.mood, moodCountMap.getOrDefault(entry.mood, 0) + 1);
+                    }
                 }
             }
         }
 
-        // Trailing blanks to complete the last row
         while (daysInMonth.size() % 7 != 0) {
             daysInMonth.add("");
         }
@@ -120,25 +131,77 @@ public class MainActivity extends AppCompatActivity {
         CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, moodMap);
         calendarGridView.setAdapter(adapter);
 
-        // Month label
-        String[] monthNames = {"January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"};
+        // Update title
         monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
 
-        // Click listener
+        // Show most frequent mood (only if 7+ days have data)
+        TextView tvAverageMood = findViewById(R.id.tvAverageMood);
+
+        if (moodCountMap.isEmpty()) {
+            tvAverageMood.setText("There isn't enough data to give an average yet.");
+        } else {
+            int totalTrackedDays = 0;
+            for (int count : moodCountMap.values()) {
+                totalTrackedDays += count;
+            }
+
+            if (totalTrackedDays < 7) {
+                tvAverageMood.setText("There isn't enough data to give an average yet.");
+            } else {
+                String mostFrequentMood = null;
+                int maxCount = 0;
+
+                for (Map.Entry<String, Integer> entry : moodCountMap.entrySet()) {
+                    if (entry.getValue() > maxCount) {
+                        mostFrequentMood = entry.getKey();
+                        maxCount = entry.getValue();
+                    }
+                }
+
+                if (mostFrequentMood != null) {
+                    tvAverageMood.setText("Most Frequent Mood: " + mostFrequentMood);
+                } else {
+                    tvAverageMood.setText("There isn't enough data to give an average yet.");
+                }
+            }
+        }
+
+        // Click listener for calendar days
         calendarGridView.setOnItemClickListener((parent, view, position, id) -> {
             String dayText = ((TextView) view.findViewById(R.id.calendarDay)).getText().toString();
-
             if (!dayText.isEmpty()) {
-                String date = String.format("%02d/%02d/%04d",
-                        currentMonth + 1,
-                        Integer.parseInt(dayText),
-                        currentYear);
-
+                String date = String.format("%02d/%02d/%04d", currentMonth + 1, Integer.parseInt(dayText), currentYear);
                 Intent intent = new Intent(MainActivity.this, SummaryActivity.class);
                 intent.putExtra("selectedDate", date);
                 startActivity(intent);
             }
         });
+    }
+
+    private String generateMonthlyReport(int month, int year) {
+        AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
+        List<DayEntry> entries = db.dayEntryDao().getAllEntries();
+
+        StringBuilder report = new StringBuilder();
+        report.append("Wellness Report - ").append(monthNames[month]).append(" ").append(year).append("\n\n");
+
+        for (DayEntry entry : entries) {
+            try {
+                String[] parts = entry.date.split("/");
+                int entryMonth = Integer.parseInt(parts[0]) - 1;
+                int entryYear = Integer.parseInt(parts[2]);
+
+                if (entryMonth == month && entryYear == year) {
+                    report.append(entry.date).append(" | Mood: ").append(entry.mood)
+                            .append(" | Sleep: ").append(entry.sleepHours).append("h ")
+                            .append(entry.sleepMinutes).append("m | Water: ")
+                            .append(entry.waterOunces).append(" oz\n");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
+        return report.toString();
     }
 }
