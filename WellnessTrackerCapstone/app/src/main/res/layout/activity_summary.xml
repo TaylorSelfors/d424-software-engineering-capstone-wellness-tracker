@@ -209,6 +209,16 @@
             android:text="Save Summary"
             android:layout_marginTop="24dp" />
 
+        <!-- DELETE BUTTON -->
+        <Button
+            android:id="@+id/btnDeleteSummary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Delete Summary"
+            android:layout_marginTop="24dp"
+            android:textColor="@android:color/white"
+            android:backgroundTint="@android:color/holo_red_dark"/>
+
         <!-- SHARE BUTTON -->
         <Button
             android:id="@+id/btnShareSummary"

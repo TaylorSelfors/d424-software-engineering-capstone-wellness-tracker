@@ -22,5 +22,8 @@ public interface DayEntryDao {
 
     @Query("SELECT * FROM DayEntry")
     List<DayEntry> getAllEntries();
+
+    @Query("DELETE FROM DayEntry WHERE date = :date")
+    void deleteByDate(String date);
 }
 

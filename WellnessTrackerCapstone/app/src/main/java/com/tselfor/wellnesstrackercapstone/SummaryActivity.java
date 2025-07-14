@@ -80,6 +80,7 @@ public class SummaryActivity extends AppCompatActivity {
         btnAddMeal.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
+                // Create meal row layout
                 LinearLayout mealRow = new LinearLayout(SummaryActivity.this);
                 mealRow.setOrientation(LinearLayout.HORIZONTAL);
                 mealRow.setLayoutParams(new LinearLayout.LayoutParams(
@@ -94,30 +95,45 @@ public class SummaryActivity extends AppCompatActivity {
                 mealTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
                 spinnerType.setAdapter(mealTypeAdapter);
                 spinnerType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+                spinnerType.setPadding(0, 0, 8, 0);
 
-                // EditText for Calories
+                // Calories input
                 EditText etCalories = new EditText(SummaryActivity.this);
                 etCalories.setHint("Calories");
-                etCalories.setInputType(android.text.InputType.TYPE_CLASS_NUMBER);
+                etCalories.setInputType(InputType.TYPE_CLASS_NUMBER);
+                etCalories.setTextSize(12);
                 etCalories.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
-                // EditText for Time
+                // Time input
                 EditText etTime = new EditText(SummaryActivity.this);
-                etTime.setHint("Time");
+                etTime.setHint("Time (e.g. 8:30)");
+                etTime.setTextSize(12);
+                etTime.setInputType(InputType.TYPE_CLASS_DATETIME);
                 etTime.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+
+                // AM/PM Spinner
+                Spinner spinnerAmPm = new Spinner(SummaryActivity.this);
+                ArrayAdapter<String> amPmAdapter = new ArrayAdapter<>(SummaryActivity.this,
+                        android.R.layout.simple_spinner_item,
+                        new String[]{"AM", "PM"});
+                amPmAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+                spinnerAmPm.setAdapter(amPmAdapter);
+                spinnerAmPm.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
                 // Delete Button
                 Button btnDelete = new Button(SummaryActivity.this);
-                btnDelete.setText("Delete");
+                btnDelete.setText("DELETE");
                 btnDelete.setLayoutParams(new LinearLayout.LayoutParams(
                         LinearLayout.LayoutParams.WRAP_CONTENT,
                         LinearLayout.LayoutParams.WRAP_CONTENT));
+                btnDelete.setTextSize(12);
                 btnDelete.setOnClickListener(delView -> ((LinearLayout) mealRow.getParent()).removeView(mealRow));
 
                 // Add all views to row
                 mealRow.addView(spinnerType);
                 mealRow.addView(etCalories);
                 mealRow.addView(etTime);
+                mealRow.addView(spinnerAmPm);
                 mealRow.addView(btnDelete);
 
                 // Add row to layout
@@ -339,16 +355,28 @@ public class SummaryActivity extends AppCompatActivity {
                     Spinner type = (Spinner) row.getChildAt(0);
                     EditText cal = (EditText) row.getChildAt(1);
                     EditText time = (EditText) row.getChildAt(2);
+                    Spinner amPmSpinner = (Spinner) row.getChildAt(3); // AM/PM Spinner
 
                     MealEntry meal = new MealEntry();
                     meal.date = selectedDate;
                     meal.mealType = type.getSelectedItem().toString();
+
                     try {
                         meal.calories = Integer.parseInt(cal.getText().toString());
                     } catch (NumberFormatException e) {
                         meal.calories = 0;
                     }
-                    meal.timeEaten = time.getText().toString();
+
+                    String rawTime = time.getText().toString().trim();
+                    String amPm = amPmSpinner.getSelectedItem().toString();
+
+                    // Validate time: must be in h:mm or hh:mm format, 1–12 hours and 00–59 minutes
+                    if (!rawTime.matches("^(0?[1-9]|1[0-2]):[0-5][0-9]$")) {
+                        Toast.makeText(SummaryActivity.this, "Invalid time format. Use h:mm (1–12 hr, 00–59 min)", Toast.LENGTH_SHORT).show();
+                        return; // prevent save if time is invalid
+                    }
+
+                    meal.timeEaten = rawTime + " " + amPm;
                     db.mealEntryDao().insert(meal);
 
                     Log.d("DB_TEST", "Meal inserted: " + meal.mealType + ", " + meal.calories + " cal, " + meal.timeEaten + ", date=" + meal.date);
@@ -430,6 +458,23 @@ public class SummaryActivity extends AppCompatActivity {
 
         Button btnBackHome = findViewById(R.id.btnBackHome);
         btnBackHome.setOnClickListener(v -> finish());
+
+        Button btnDelete = findViewById(R.id.btnDeleteSummary);
+        btnDelete.setOnClickListener(v -> {
+
+            // Delete all data for the selected date
+            db.dayEntryDao().deleteByDate(selectedDate);
+            db.mealEntryDao().deleteMealsForDate(selectedDate);
+            db.exerciseEntryDao().deleteExercisesForDate(selectedDate);
+
+            Toast.makeText(SummaryActivity.this, "Summary deleted.", Toast.LENGTH_SHORT).show();
+
+            // Go back to home
+            Intent intent = new Intent(SummaryActivity.this, MainActivity.class);
+            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(intent);
+            finish();
+        });
 
     }
 }
