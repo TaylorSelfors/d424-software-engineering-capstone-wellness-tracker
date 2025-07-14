@@ -19,6 +19,8 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.tselfor.wellnesstrackercapstone.adapters.MoodAdapter;
 import com.tselfor.wellnesstrackercapstone.data.DayEntry;
+import com.tselfor.wellnesstrackercapstone.data.MealEntry;
+import com.tselfor.wellnesstrackercapstone.data.ExerciseEntry;
 import com.tselfor.wellnesstrackercapstone.database.AppDatabase;
 import com.tselfor.wellnesstrackercapstone.database.DatabaseClient;
 import com.tselfor.wellnesstrackercapstone.dao.DayEntryDao;
@@ -177,9 +179,38 @@ public class SummaryActivity extends AppCompatActivity {
         MoodAdapter moodAdapter = new MoodAdapter(this, moodList);
         spinnerMood.setAdapter(moodAdapter);
 
+        // Load previously saved data for selectedDate if it exists
+        AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
+        DayEntry existingEntry = db.dayEntryDao().getEntryByDate(selectedDate);
+        EditText etJournal = findViewById(R.id.etJournal);
+
+        if (existingEntry != null) {
+            etHours.setText(String.valueOf(existingEntry.sleepHours));
+            etMinutes.setText(String.valueOf(existingEntry.sleepMinutes));
+            etWater.setText(String.valueOf(existingEntry.waterOunces));
+            etJournal.setText(existingEntry.journal);
+
+            // Set mood spinner to match saved mood
+            int moodPosition = moodList.indexOf(existingEntry.mood);
+            if (moodPosition >= 0) {
+                spinnerMood.setSelection(moodPosition);
+            }
+
+            // Load meals
+            List<MealEntry> meals = db.mealEntryDao().getMealsForDate(selectedDate);
+            for (MealEntry meal : meals) {
+                // [meal row creation code goes here...]
+            }
+
+            // Load exercises
+            List<ExerciseEntry> exercises = db.exerciseEntryDao().getExercisesForDate(selectedDate);
+            for (ExerciseEntry ex : exercises) {
+                // [exercise row creation code goes here...]
+            }
+        }
+
         // Save summary
         Button btnSave = findViewById(R.id.btnSaveSummary);
-        EditText etJournal = findViewById(R.id.etJournal);
 
         btnSave.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -218,6 +249,53 @@ public class SummaryActivity extends AppCompatActivity {
                 db.dayEntryDao().insert(entry);
 
                 Toast.makeText(SummaryActivity.this, "Summary saved!", Toast.LENGTH_SHORT).show();
+
+                // Clear old meals and exercises
+                db.mealEntryDao().deleteMealsForDate(selectedDate);
+                db.exerciseEntryDao().deleteExercisesForDate(selectedDate);
+
+// Save meals
+                for (int i = 0; i < mealListLayout.getChildCount(); i++) {
+                    LinearLayout row = (LinearLayout) mealListLayout.getChildAt(i);
+                    Spinner type = (Spinner) row.getChildAt(0);
+                    EditText cal = (EditText) row.getChildAt(1);
+                    EditText time = (EditText) row.getChildAt(2);
+
+                    MealEntry meal = new MealEntry();
+                    meal.date = selectedDate;
+                    meal.mealType = type.getSelectedItem().toString();
+                    try {
+                        meal.calories = Integer.parseInt(cal.getText().toString());
+                    } catch (NumberFormatException e) {
+                        meal.calories = 0;
+                    }
+                    meal.timeEaten = time.getText().toString();
+                    db.mealEntryDao().insert(meal);
+                }
+
+// Save exercises
+                for (int i = 0; i < exerciseListLayout.getChildCount(); i++) {
+                    LinearLayout row = (LinearLayout) exerciseListLayout.getChildAt(i);
+                    EditText duration = (EditText) row.getChildAt(0);
+                    Spinner intensity = (Spinner) row.getChildAt(1);
+
+                    ExerciseEntry ex = new ExerciseEntry();
+                    ex.date = selectedDate;
+                    try {
+                        ex.duration = Integer.parseInt(duration.getText().toString());
+                    } catch (NumberFormatException e) {
+                        ex.duration = 0;
+                    }
+                    ex.intensity = intensity.getSelectedItem().toString();
+                    db.exerciseEntryDao().insert(ex);
+                }
+
+
+                // Go back to MainActivity after saving
+                Intent intent = new Intent(SummaryActivity.this, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_NEW_TASK);
+                startActivity(intent);
+                finish();
             }
         });
 
@@ -239,10 +317,7 @@ public class SummaryActivity extends AppCompatActivity {
 
             summary += "- Mood: " + spinnerMood.getSelectedItem().toString() + "\n";
 
-            String journal = etJournal.getText().toString().trim();
-            if (!journal.isEmpty()) {
-                summary += "- Journal: " + journal + "\n";
-            }
+            // Journal intentionally excluded from sharing
 
             summary += "- Meals:\n";
             for (int i = 0; i < mealListLayout.getChildCount(); i++) {
@@ -269,7 +344,6 @@ public class SummaryActivity extends AppCompatActivity {
 
             startActivity(Intent.createChooser(shareIntent, "Share your wellness summary via"));
         });
-
 
         Button btnBackHome = findViewById(R.id.btnBackHome);
         btnBackHome.setOnClickListener(v -> finish());

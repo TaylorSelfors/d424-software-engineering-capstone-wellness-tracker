@@ -12,11 +12,21 @@ import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Button;
 import android.content.Intent;
+import android.view.View;
+import android.widget.Toast;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 
 import com.tselfor.wellnesstrackercapstone.adapters.CalendarAdapter;
+import com.tselfor.wellnesstrackercapstone.database.AppDatabase;
+import com.tselfor.wellnesstrackercapstone.database.DatabaseClient;
+import com.tselfor.wellnesstrackercapstone.data.DayEntry;
 
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity {
     private int currentMonth;
@@ -29,6 +39,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         EdgeToEdge.enable(this);
         setContentView(R.layout.activity_main);
+
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
             Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
@@ -63,10 +74,14 @@ public class MainActivity extends AppCompatActivity {
             loadCalendar();
         });
 
+        // Load the current month's calendar
         loadCalendar();
+    }
 
-        // Get days
+    private void loadCalendar() {
         ArrayList<String> daysInMonth = new ArrayList<>();
+        Map<Integer, String> moodMap = new HashMap<>();
+
         Calendar tempCal = Calendar.getInstance();
         tempCal.set(Calendar.YEAR, currentYear);
         tempCal.set(Calendar.MONTH, currentMonth);
@@ -75,71 +90,42 @@ public class MainActivity extends AppCompatActivity {
         int firstDayOfWeek = tempCal.get(Calendar.DAY_OF_WEEK) - 1; // Sunday = 0
         int maxDay = tempCal.getActualMaximum(Calendar.DAY_OF_MONTH);
 
-        for (int i = 0; i < firstDayOfWeek; i++) {
-            daysInMonth.add(""); // Blank cells for alignment
-        }
-
-        for (int i = 1; i <= maxDay; i++) {
-            daysInMonth.add(String.valueOf(i));
-        }
-
-        // Add trailing blanks
-        int totalCells = daysInMonth.size();
-        while (totalCells % 7 != 0) {
-            daysInMonth.add("");
-            totalCells++;
-        }
-
-        // Simulate edited days for now
-        ArrayList<Integer> editedPositions = new ArrayList<>();
-        editedPositions.add(3);  // Example: day 3
-        editedPositions.add(10); // Example: day 10
-
-        CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, editedPositions);
-        calendarGridView.setAdapter(adapter);
-
-        // Update the month-year text
-        String[] monthNames = {"January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"};
-        monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
-    }
-
-    private void loadCalendar() {
-        ArrayList<String> daysInMonth = new ArrayList<>();
-
-        Calendar tempCal = Calendar.getInstance();
-        tempCal.set(Calendar.YEAR, currentYear);
-        tempCal.set(Calendar.MONTH, currentMonth);
-        tempCal.set(Calendar.DAY_OF_MONTH, 1);
-
-        int firstDayOfWeek = tempCal.get(Calendar.DAY_OF_WEEK) - 1;
-        int maxDay = tempCal.getActualMaximum(Calendar.DAY_OF_MONTH);
-
+        // Padding before 1st
         for (int i = 0; i < firstDayOfWeek; i++) {
             daysInMonth.add("");
         }
 
-        for (int i = 1; i <= maxDay; i++) {
-            daysInMonth.add(String.valueOf(i));
+        int startOffset = daysInMonth.size();
+
+        // Fetch entries from Room DB
+        AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
+        List<DayEntry> entries = db.dayEntryDao().getAllEntries();
+
+        for (int day = 1; day <= maxDay; day++) {
+            daysInMonth.add(String.valueOf(day));
+            String dateStr = String.format("%02d/%02d/%04d", currentMonth + 1, day, currentYear);
+
+            for (DayEntry entry : entries) {
+                if (entry.date.equals(dateStr)) {
+                    moodMap.put(startOffset + (day - 1), entry.mood); // index in GridView
+                }
+            }
         }
 
+        // Trailing blanks to complete the last row
         while (daysInMonth.size() % 7 != 0) {
             daysInMonth.add("");
         }
 
-        ArrayList<Integer> editedPositions = new ArrayList<>();
-// TODO: Load actual edited dates from Room database later
-
-// Set up the calendar grid with adapter
-        CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, editedPositions);
+        CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, moodMap);
         calendarGridView.setAdapter(adapter);
 
-        // Update the month/year label
+        // Month label
         String[] monthNames = {"January", "February", "March", "April", "May", "June",
                 "July", "August", "September", "October", "November", "December"};
         monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
 
-        // Handle cell click to open SummaryActivity
+        // Click listener
         calendarGridView.setOnItemClickListener((parent, view, position, id) -> {
             String dayText = ((TextView) view.findViewById(R.id.calendarDay)).getText().toString();
 

@@ -3,7 +3,7 @@ package com.tselfor.wellnesstrackercapstone.data;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity
+@Entity(tableName = "exercise_entry")
 public class ExerciseEntry {
 
     @PrimaryKey(autoGenerate = true)
@@ -11,7 +11,7 @@ public class ExerciseEntry {
 
     public String date; // To associate this exercise with a DayEntry
 
-    public int durationMinutes;
+    public int duration;
     public String intensity; // "Low", "Medium", or "High"
 }
 

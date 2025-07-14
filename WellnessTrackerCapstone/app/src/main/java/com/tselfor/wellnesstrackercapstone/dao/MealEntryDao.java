@@ -15,10 +15,9 @@ public interface MealEntryDao {
     @Insert
     void insert(MealEntry entry);
 
-    @Delete
-    void delete(MealEntry entry);
+    @Query("SELECT * FROM meal_entry WHERE date = :selectedDate")
+    List<MealEntry> getMealsForDate(String selectedDate);
 
-    @Query("SELECT * FROM MealEntry WHERE date = :date")
-    List<MealEntry> getMealsByDate(String date);
+    @Query("DELETE FROM meal_entry WHERE date = :selectedDate")
+    void deleteMealsForDate(String selectedDate);
 }
-

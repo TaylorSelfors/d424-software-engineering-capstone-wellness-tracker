@@ -15,9 +15,9 @@ public interface ExerciseEntryDao {
     @Insert
     void insert(ExerciseEntry entry);
 
-    @Delete
-    void delete(ExerciseEntry entry);
+    @Query("SELECT * FROM exercise_entry WHERE date = :selectedDate")
+    List<ExerciseEntry> getExercisesForDate(String selectedDate);
 
-    @Query("SELECT * FROM ExerciseEntry WHERE date = :date")
-    List<ExerciseEntry> getExercisesByDate(String date);
+    @Query("DELETE FROM exercise_entry WHERE date = :selectedDate")
+    void deleteExercisesForDate(String selectedDate);
 }

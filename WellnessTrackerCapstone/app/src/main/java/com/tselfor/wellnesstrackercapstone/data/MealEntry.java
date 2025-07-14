@@ -3,7 +3,7 @@ package com.tselfor.wellnesstrackercapstone.data;
 import androidx.room.Entity;
 import androidx.room.PrimaryKey;
 
-@Entity
+@Entity(tableName = "meal_entry")
 public class MealEntry {
 
     @PrimaryKey(autoGenerate = true)
@@ -13,5 +13,5 @@ public class MealEntry {
 
     public String mealType; // Breakfast, Lunch, Dinner, Snack
     public int calories;
-    public String time; // e.g., "12:00 PM"
+    public String timeEaten; // e.g., "12:00 PM"
 }

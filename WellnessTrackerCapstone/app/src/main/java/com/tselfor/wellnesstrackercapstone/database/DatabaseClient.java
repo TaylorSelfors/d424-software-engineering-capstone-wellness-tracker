@@ -11,10 +11,13 @@ public class DatabaseClient {
 
     private DatabaseClient(Context context) {
         appDatabase = Room.databaseBuilder(
-                context.getApplicationContext(),
-                AppDatabase.class,
-                "wellness_tracker_db"
-        ).allowMainThreadQueries().build(); // TEMP: remove for production
+                        context.getApplicationContext(),
+                        AppDatabase.class,
+                        "wellness_tracker_db"
+                )
+                .fallbackToDestructiveMigration() // 🛠 Automatically rebuilds DB on schema change
+                .allowMainThreadQueries()         // TEMP: Okay for development
+                .build();
     }
 
     public static synchronized DatabaseClient getInstance(Context context) {
