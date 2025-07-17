@@ -18,12 +18,28 @@ import com.tselfor.wellnesstrackercapstone.adapters.CalendarAdapter;
 import com.tselfor.wellnesstrackercapstone.database.AppDatabase;
 import com.tselfor.wellnesstrackercapstone.database.DatabaseClient;
 import com.tselfor.wellnesstrackercapstone.data.DayEntry;
+import com.tselfor.wellnesstrackercapstone.data.ExerciseEntry;
+import com.tselfor.wellnesstrackercapstone.data.MealEntry;
 
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import android.app.AlertDialog;
+import android.graphics.Canvas;
+import android.graphics.Paint;
+import android.graphics.pdf.PdfDocument;
+import android.os.Environment;
+import android.widget.Toast;
+
+import androidx.core.content.FileProvider;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+
 
 public class MainActivity extends AppCompatActivity {
 
@@ -77,8 +93,13 @@ public class MainActivity extends AppCompatActivity {
 
         btnGenerate.setOnClickListener(v -> {
             String report = generateMonthlyReport(currentMonth, currentYear);
-            Log.d("MONTHLY_REPORT", report);
-            // You could also show in a dialog or share via intent here
+
+            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+            builder.setTitle("Monthly Wellness Report");
+            builder.setMessage(report);
+            builder.setPositiveButton("OK", null);
+            builder.setNegativeButton("Export to PDF", (dialog, which) -> exportReportToPDF(report));
+            builder.show();
         });
 
         // Initial load
@@ -182,6 +203,9 @@ public class MainActivity extends AppCompatActivity {
         AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
         List<DayEntry> entries = db.dayEntryDao().getAllEntries();
 
+        String[] monthNames = {"January", "February", "March", "April", "May", "June",
+                "July", "August", "September", "October", "November", "December"};
+
         StringBuilder report = new StringBuilder();
         report.append("Wellness Report - ").append(monthNames[month]).append(" ").append(year).append("\n\n");
 
@@ -192,10 +216,36 @@ public class MainActivity extends AppCompatActivity {
                 int entryYear = Integer.parseInt(parts[2]);
 
                 if (entryMonth == month && entryYear == year) {
-                    report.append(entry.date).append(" | Mood: ").append(entry.mood)
-                            .append(" | Sleep: ").append(entry.sleepHours).append("h ")
-                            .append(entry.sleepMinutes).append("m | Water: ")
-                            .append(entry.waterOunces).append(" oz\n");
+                    report.append("📅 ").append(entry.date).append("\n");
+                    report.append("• Mood: ").append(entry.mood).append("\n");
+                    report.append("• Sleep: ").append(entry.sleepHours).append("h ").append(entry.sleepMinutes).append("m\n");
+                    report.append("• Water: ").append(entry.waterOunces).append(" oz\n");
+
+                    // Add Journal
+                    if (entry.journal != null && !entry.journal.trim().isEmpty()) {
+                        report.append("• Journal: ").append(entry.journal).append("\n");
+                    }
+
+                    // Meals
+                    List<MealEntry> meals = db.mealEntryDao().getMealsForDate(entry.date);
+                    if (!meals.isEmpty()) {
+                        report.append("• Meals:\n");
+                        for (MealEntry meal : meals) {
+                            report.append("   - ").append(meal.mealType).append(" at ").append(meal.timeEaten)
+                                    .append(": ").append(meal.calories).append(" cal\n");
+                        }
+                    }
+
+                    // Exercises
+                    List<ExerciseEntry> exercises = db.exerciseEntryDao().getExercisesForDate(entry.date);
+                    if (!exercises.isEmpty()) {
+                        report.append("• Exercises:\n");
+                        for (ExerciseEntry ex : exercises) {
+                            report.append("   - ").append(ex.duration).append(" mins (").append(ex.intensity).append(")\n");
+                        }
+                    }
+
+                    report.append("\n"); // spacing between days
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -203,5 +253,43 @@ public class MainActivity extends AppCompatActivity {
         }
 
         return report.toString();
+    }
+
+    private void exportReportToPDF(String reportContent) {
+        String fileName = "Wellness_Report_" + (currentMonth + 1) + "_" + currentYear + ".pdf";
+
+        PdfDocument document = new PdfDocument();
+        Paint paint = new Paint();
+        PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create(); // A4 size
+        PdfDocument.Page page = document.startPage(pageInfo);
+        Canvas canvas = page.getCanvas();
+
+        int x = 40, y = 50;
+        for (String line : reportContent.split("\n")) {
+            canvas.drawText(line, x, y, paint);
+            y += 20;
+            if (y > 800) break; // Simple 1-page overflow check
+        }
+
+        document.finishPage(page);
+
+        File path = new File(getExternalFilesDir(null), fileName);
+        try {
+            FileOutputStream fos = new FileOutputStream(path);
+            document.writeTo(fos);
+            Toast.makeText(this, "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
+
+            // Optionally open the PDF
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setDataAndType(FileProvider.getUriForFile(this, getPackageName() + ".provider", path), "application/pdf");
+            intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+            startActivity(intent);
+
+        } catch (IOException e) {
+            e.printStackTrace();
+            Toast.makeText(this, "Error saving PDF", Toast.LENGTH_SHORT).show();
+        }
+
+        document.close();
     }
 }

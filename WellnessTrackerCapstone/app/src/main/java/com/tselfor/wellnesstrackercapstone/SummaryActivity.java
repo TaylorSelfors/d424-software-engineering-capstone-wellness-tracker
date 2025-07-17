@@ -77,68 +77,63 @@ public class SummaryActivity extends AppCompatActivity {
         Button btnAddMeal = findViewById(R.id.btnAddMeal);
         LinearLayout mealListLayout = findViewById(R.id.mealListLayout);
 
-        btnAddMeal.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // Create meal row layout
-                LinearLayout mealRow = new LinearLayout(SummaryActivity.this);
-                mealRow.setOrientation(LinearLayout.HORIZONTAL);
-                mealRow.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT));
+        btnAddMeal.setOnClickListener(v -> {
+            LinearLayout mealRow = new LinearLayout(SummaryActivity.this);
+            mealRow.setOrientation(LinearLayout.HORIZONTAL);
+            mealRow.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.MATCH_PARENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+            mealRow.setPadding(0, 8, 0, 8);
 
-                // Spinner for Meal Type
-                Spinner spinnerType = new Spinner(SummaryActivity.this);
-                ArrayAdapter<String> mealTypeAdapter = new ArrayAdapter<>(SummaryActivity.this,
-                        android.R.layout.simple_spinner_item,
-                        new String[]{"Breakfast", "Lunch", "Dinner", "Snack", "Beverage"});
-                mealTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spinnerType.setAdapter(mealTypeAdapter);
-                spinnerType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
-                spinnerType.setPadding(0, 0, 8, 0);
+            // Spinner: Meal Type
+            Spinner spinnerType = new Spinner(SummaryActivity.this);
+            ArrayAdapter<String> mealTypeAdapter = new ArrayAdapter<>(SummaryActivity.this,
+                    android.R.layout.simple_spinner_item,
+                    new String[]{"Breakfast", "Lunch", "Dinner", "Snack", "Beverage"});
+            mealTypeAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerType.setAdapter(mealTypeAdapter);
+            spinnerType.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
-                // Calories input
-                EditText etCalories = new EditText(SummaryActivity.this);
-                etCalories.setHint("Calories");
-                etCalories.setInputType(InputType.TYPE_CLASS_NUMBER);
-                etCalories.setTextSize(12);
-                etCalories.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            // EditText: Calories
+            EditText etCalories = new EditText(SummaryActivity.this);
+            etCalories.setHint("Calories");
+            etCalories.setInputType(InputType.TYPE_CLASS_NUMBER);
+            etCalories.setTextSize(12);
+            etCalories.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
-                // Time input
-                EditText etTime = new EditText(SummaryActivity.this);
-                etTime.setHint("Time (e.g. 8:30)");
-                etTime.setTextSize(12);
-                etTime.setInputType(InputType.TYPE_CLASS_DATETIME);
-                etTime.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            // EditText: Time
+            EditText etTime = new EditText(SummaryActivity.this);
+            etTime.setHint("Time (e.g. 8:30)");
+            etTime.setInputType(InputType.TYPE_CLASS_DATETIME);
+            etTime.setTextSize(12);
+            etTime.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
-                // AM/PM Spinner
-                Spinner spinnerAmPm = new Spinner(SummaryActivity.this);
-                ArrayAdapter<String> amPmAdapter = new ArrayAdapter<>(SummaryActivity.this,
-                        android.R.layout.simple_spinner_item,
-                        new String[]{"AM", "PM"});
-                amPmAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-                spinnerAmPm.setAdapter(amPmAdapter);
-                spinnerAmPm.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
+            // Spinner: AM/PM
+            Spinner spinnerAmPm = new Spinner(SummaryActivity.this);
+            ArrayAdapter<String> amPmAdapter = new ArrayAdapter<>(SummaryActivity.this,
+                    android.R.layout.simple_spinner_item,
+                    new String[]{"AM", "PM"});
+            amPmAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+            spinnerAmPm.setAdapter(amPmAdapter);
+            spinnerAmPm.setLayoutParams(new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1));
 
-                // Delete Button
-                Button btnDelete = new Button(SummaryActivity.this);
-                btnDelete.setText("DELETE");
-                btnDelete.setLayoutParams(new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.WRAP_CONTENT,
-                        LinearLayout.LayoutParams.WRAP_CONTENT));
-                btnDelete.setTextSize(12);
-                btnDelete.setOnClickListener(delView -> ((LinearLayout) mealRow.getParent()).removeView(mealRow));
+            // Button: Delete
+            Button btnDelete = new Button(SummaryActivity.this);
+            btnDelete.setText("✖");
+            btnDelete.setTextSize(10);
+            btnDelete.setLayoutParams(new LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT));
+            btnDelete.setOnClickListener(delView -> ((LinearLayout) mealRow.getParent()).removeView(mealRow));
 
-                // Add all views to row
-                mealRow.addView(spinnerType);
-                mealRow.addView(etCalories);
-                mealRow.addView(etTime);
-                mealRow.addView(spinnerAmPm);
-                mealRow.addView(btnDelete);
+            // 🧠 Add views in exact order for save logic
+            mealRow.addView(spinnerType);    // index 0
+            mealRow.addView(etCalories);     // index 1
+            mealRow.addView(etTime);         // index 2
+            mealRow.addView(spinnerAmPm);    // index 3
+            mealRow.addView(btnDelete);      // index 4
 
-                // Add row to layout
-                mealListLayout.addView(mealRow);
-            }
+            mealListLayout.addView(mealRow);
         });
 
         // Exercise
@@ -170,7 +165,7 @@ public class SummaryActivity extends AppCompatActivity {
 
             // Delete button
             Button btnDelete = new Button(SummaryActivity.this);
-            btnDelete.setText("Delete");
+            btnDelete.setText("✖");
             btnDelete.setLayoutParams(new LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT));
@@ -341,7 +336,8 @@ public class SummaryActivity extends AppCompatActivity {
                 entry.journal = journal;
 
                 AppDatabase db = DatabaseClient.getInstance(SummaryActivity.this).getAppDatabase();
-                db.dayEntryDao().insert(entry);
+                db.dayEntryDao().deleteEntryByDate(selectedDate);  // prevents duplicates
+                db.dayEntryDao().insert(entry);                    // inserts the new one
 
                 Toast.makeText(SummaryActivity.this, "Summary saved!", Toast.LENGTH_SHORT).show();
 

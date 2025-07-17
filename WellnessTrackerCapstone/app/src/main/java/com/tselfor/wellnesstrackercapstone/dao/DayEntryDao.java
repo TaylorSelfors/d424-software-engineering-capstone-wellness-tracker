@@ -25,5 +25,9 @@ public interface DayEntryDao {
 
     @Query("DELETE FROM DayEntry WHERE date = :date")
     void deleteByDate(String date);
+
+    @Query("DELETE FROM DayEntry WHERE date = :date")
+    void deleteEntryByDate(String date);
+
 }
 
