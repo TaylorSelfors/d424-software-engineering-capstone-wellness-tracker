@@ -63,13 +63,13 @@ public class MainActivity extends AppCompatActivity {
         Switch switchTheme = findViewById(R.id.switchTheme);
         SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
 
-// Set initial state
+        // Set initial state
         boolean isDark = prefs.getBoolean("dark_mode", false);
         AppCompatDelegate.setDefaultNightMode(isDark ?
                 AppCompatDelegate.MODE_NIGHT_YES : AppCompatDelegate.MODE_NIGHT_NO);
         switchTheme.setChecked(isDark);
 
-// Listen for toggle changes
+        // Listen for toggle changes
         switchTheme.setOnCheckedChangeListener((buttonView, isChecked) -> {
             SharedPreferences.Editor editor = prefs.edit();
             editor.putBoolean("dark_mode", isChecked);

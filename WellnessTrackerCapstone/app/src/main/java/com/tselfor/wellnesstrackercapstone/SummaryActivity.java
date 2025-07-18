@@ -24,7 +24,10 @@ import com.tselfor.wellnesstrackercapstone.data.MealEntry;
 import com.tselfor.wellnesstrackercapstone.data.ExerciseEntry;
 import com.tselfor.wellnesstrackercapstone.database.AppDatabase;
 import com.tselfor.wellnesstrackercapstone.database.DatabaseClient;
-import com.tselfor.wellnesstrackercapstone.dao.DayEntryDao;
+import com.tselfor.wellnesstrackercapstone.view.ZoomableImageView;
+
+import android.app.Dialog;
+import android.widget.ImageView;
 
 public class SummaryActivity extends AppCompatActivity {
 
@@ -190,6 +193,24 @@ public class SummaryActivity extends AppCompatActivity {
 
         MoodAdapter moodAdapter = new MoodAdapter(this, moodList);
         spinnerMood.setAdapter(moodAdapter);
+
+        // Dialog box for mood wheel
+        Button btnShowWheel = findViewById(R.id.btnShowEmotionsWheel);
+
+        btnShowWheel.setOnClickListener(v -> {
+            Dialog fullscreenDialog = new Dialog(SummaryActivity.this, android.R.style.Theme_Black_NoTitleBar_Fullscreen);
+            fullscreenDialog.setContentView(R.layout.dialog_emotions_wheel);
+
+            ImageView ivWheel = fullscreenDialog.findViewById(R.id.ivWheelFullscreen);
+            ivWheel.setScaleType(ImageView.ScaleType.FIT_CENTER); // Ensures proper scaling
+            ivWheel.setAdjustViewBounds(true); // Keeps aspect ratio
+
+            Button btnClose = fullscreenDialog.findViewById(R.id.btnCloseDialog);
+            btnClose.setOnClickListener(d -> fullscreenDialog.dismiss());
+
+            fullscreenDialog.show();
+        });
+
 
         // Load previously saved data for selectedDate if it exists
         AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
