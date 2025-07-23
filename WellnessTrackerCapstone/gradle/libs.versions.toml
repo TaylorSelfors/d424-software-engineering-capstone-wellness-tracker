@@ -17,8 +17,12 @@ material = { group = "com.google.android.material", name = "material", version.r
 activity = { group = "androidx.activity", name = "activity", version.ref = "activity" }
 constraintlayout = { group = "androidx.constraintlayout", name = "constraintlayout", version.ref = "constraintlayout" }
 
-room-runtime = { group = "androidx.room", name = "room-runtime", version = "2.6.1" }
-room-compiler = { group = "androidx.room", name = "room-compiler", version = "2.6.1" }
+room-runtime = { group = "androidx.room", name = "room-runtime", version = "2.7.2" }
+room-compiler = { group = "androidx.room", name = "room-compiler", version = "2.7.2" }
+
+room-testing = { group = "androidx.room", name = "room-testing", version = "2.7.2" }
+arch-core-testing = { group = "androidx.arch.core", name = "core-testing", version = "2.2.0" }
+
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

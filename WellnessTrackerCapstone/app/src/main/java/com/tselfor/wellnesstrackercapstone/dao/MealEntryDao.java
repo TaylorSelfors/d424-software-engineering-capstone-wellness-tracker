@@ -15,6 +15,9 @@ public interface MealEntryDao {
     @Insert
     void insert(MealEntry entry);
 
+    @Delete
+    void delete(MealEntry meal);
+
     @Query("SELECT * FROM meal_entry WHERE date = :selectedDate")
     List<MealEntry> getMealsForDate(String selectedDate);
 
