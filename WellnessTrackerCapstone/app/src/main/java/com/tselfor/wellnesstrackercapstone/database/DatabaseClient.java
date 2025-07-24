@@ -16,7 +16,6 @@ public class DatabaseClient {
                         "wellness_tracker_db"
                 )
                 .fallbackToDestructiveMigration() // 🛠 Automatically rebuilds DB on schema change
-                .allowMainThreadQueries()         // TEMP: Okay for development
                 .build();
     }
 

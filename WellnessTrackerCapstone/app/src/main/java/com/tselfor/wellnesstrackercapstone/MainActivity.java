@@ -3,13 +3,11 @@ package com.tselfor.wellnesstrackercapstone;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.util.Log;
 import android.widget.GridView;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Button;
 import android.content.Intent;
-import android.view.View;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -35,7 +33,6 @@ import android.app.AlertDialog;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.graphics.pdf.PdfDocument;
-import android.os.Environment;
 import android.widget.Toast;
 
 import androidx.core.content.FileProvider;
@@ -43,6 +40,9 @@ import androidx.core.content.FileProvider;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.function.Consumer;
+
 
 
 public class MainActivity extends AppCompatActivity {
@@ -117,14 +117,16 @@ public class MainActivity extends AppCompatActivity {
         });
 
         btnGenerate.setOnClickListener(v -> {
-            String report = generateMonthlyReport(currentMonth, currentYear);
-
-            AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
-            builder.setTitle("Monthly Wellness Report");
-            builder.setMessage(report);
-            builder.setPositiveButton("OK", null);
-            builder.setNegativeButton("Export to PDF", (dialog, which) -> exportReportToPDF(report));
-            builder.show();
+            generateMonthlyReportAsync(currentMonth, currentYear, report -> {
+                runOnUiThread(() -> {
+                    AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                    builder.setTitle("Monthly Wellness Report");
+                    builder.setMessage(report);
+                    builder.setPositiveButton("OK", null);
+                    builder.setNegativeButton("Export to PDF", (dialog, which) -> exportReportToPDF(report));
+                    builder.show();
+                });
+            });
         });
 
         // Initial load
@@ -150,150 +152,167 @@ public class MainActivity extends AppCompatActivity {
         int startOffset = daysInMonth.size();
 
         AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
-        List<DayEntry> entries = db.dayEntryDao().getAllEntries();
 
-        Map<String, Integer> moodCountMap = new HashMap<>();
+        //  Run DB operations on background thread
+        Executors.newSingleThreadExecutor().execute(() -> {
+            List<DayEntry> entries = db.dayEntryDao().getAllEntries();
+            Map<String, Integer> moodCountMap = new HashMap<>();
 
-        for (int day = 1; day <= maxDay; day++) {
-            daysInMonth.add(String.valueOf(day));
-            String dateStr = String.format("%02d/%02d/%04d", currentMonth + 1, day, currentYear);
+            for (int day = 1; day <= maxDay; day++) {
+                daysInMonth.add(String.valueOf(day));
+                String dateStr = String.format("%02d/%02d/%04d", currentMonth + 1, day, currentYear);
 
-            for (DayEntry entry : entries) {
-                if (entry.date.equals(dateStr)) {
-                    moodMap.put(startOffset + (day - 1), entry.mood);
+                for (DayEntry entry : entries) {
+                    if (entry.date.equals(dateStr)) {
+                        moodMap.put(startOffset + (day - 1), entry.mood);
 
-                    // Count mood occurrences
-                    if (!entry.mood.equals("None")) {
-                        moodCountMap.put(entry.mood, moodCountMap.getOrDefault(entry.mood, 0) + 1);
+                        if (!entry.mood.equals("None")) {
+                            moodCountMap.put(entry.mood, moodCountMap.getOrDefault(entry.mood, 0) + 1);
+                        }
                     }
                 }
             }
-        }
 
-        while (daysInMonth.size() % 7 != 0) {
-            daysInMonth.add("");
-        }
-
-        CalendarAdapter adapter = new CalendarAdapter(this, daysInMonth, moodMap);
-        calendarGridView.setAdapter(adapter);
-
-        // Update title
-        monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
-
-        // Show most frequent mood (only if 7+ days have data)
-        TextView tvAverageMood = findViewById(R.id.tvAverageMood);
-
-        if (moodCountMap.isEmpty()) {
-            tvAverageMood.setText("There isn't enough data to give an average yet.");
-        } else {
-            int totalTrackedDays = 0;
-            for (int count : moodCountMap.values()) {
-                totalTrackedDays += count;
+            while (daysInMonth.size() % 7 != 0) {
+                daysInMonth.add("");
             }
 
-            if (totalTrackedDays < 7) {
-                tvAverageMood.setText("There isn't enough data to give an average yet.");
-            } else {
-                String mostFrequentMood = null;
-                int maxCount = 0;
+            //  Safely update UI
+            runOnUiThread(() -> {
+                CalendarAdapter adapter = new CalendarAdapter(MainActivity.this, daysInMonth, moodMap);
+                calendarGridView.setAdapter(adapter);
+                monthYearText.setText(monthNames[currentMonth] + " " + currentYear);
 
-                for (Map.Entry<String, Integer> entry : moodCountMap.entrySet()) {
-                    if (entry.getValue() > maxCount) {
-                        mostFrequentMood = entry.getKey();
-                        maxCount = entry.getValue();
-                    }
-                }
+                TextView tvAverageMood = findViewById(R.id.tvAverageMood);
 
-                if (mostFrequentMood != null) {
-                    tvAverageMood.setText("Most Frequent Mood: " + mostFrequentMood);
-                } else {
+                if (moodCountMap.isEmpty()) {
                     tvAverageMood.setText("There isn't enough data to give an average yet.");
-                }
-            }
-        }
+                } else {
+                    int totalTrackedDays = 0;
+                    for (int count : moodCountMap.values()) {
+                        totalTrackedDays += count;
+                    }
 
-        // Click listener for calendar days
-        calendarGridView.setOnItemClickListener((parent, view, position, id) -> {
-            String dayText = ((TextView) view.findViewById(R.id.calendarDay)).getText().toString();
-            if (!dayText.isEmpty()) {
-                String date = String.format("%02d/%02d/%04d", currentMonth + 1, Integer.parseInt(dayText), currentYear);
-                Intent intent = new Intent(MainActivity.this, SummaryActivity.class);
-                intent.putExtra("selectedDate", date);
-                startActivity(intent);
-            }
+                    if (totalTrackedDays < 7) {
+                        tvAverageMood.setText("There isn't enough data to give an average yet.");
+                    } else {
+                        String mostFrequentMood = null;
+                        int maxCount = 0;
+
+                        for (Map.Entry<String, Integer> entry : moodCountMap.entrySet()) {
+                            if (entry.getValue() > maxCount) {
+                                mostFrequentMood = entry.getKey();
+                                maxCount = entry.getValue();
+                            }
+                        }
+
+                        if (mostFrequentMood != null) {
+                            tvAverageMood.setText("Most Frequent Mood: " + mostFrequentMood);
+                        } else {
+                            tvAverageMood.setText("There isn't enough data to give an average yet.");
+                        }
+                    }
+                }
+
+                // Day click listener
+                calendarGridView.setOnItemClickListener((parent, view, position, id) -> {
+                    String dayText = ((TextView) view.findViewById(R.id.calendarDay)).getText().toString();
+                    if (!dayText.isEmpty()) {
+                        String date = String.format("%02d/%02d/%04d", currentMonth + 1, Integer.parseInt(dayText), currentYear);
+                        Intent intent = new Intent(MainActivity.this, SummaryActivity.class);
+                        intent.putExtra("selectedDate", date);
+                        startActivity(intent);
+                    }
+                });
+            });
         });
     }
 
-    private String generateMonthlyReport(int month, int year) {
-        AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
-        List<DayEntry> entries = db.dayEntryDao().getAllEntries();
+    private void generateMonthlyReportAsync(int month, int year, Consumer<String> callback) {
+        Executors.newSingleThreadExecutor().execute(() -> {
+            AppDatabase db = DatabaseClient.getInstance(this).getAppDatabase();
+            List<DayEntry> entries = db.dayEntryDao().getAllEntries();
 
-        String[] monthNames = {"January", "February", "March", "April", "May", "June",
-                "July", "August", "September", "October", "November", "December"};
+            String[] monthNames = {"January", "February", "March", "April", "May", "June",
+                    "July", "August", "September", "October", "November", "December"};
 
-        StringBuilder report = new StringBuilder();
-        report.append("Wellness Report - ").append(monthNames[month]).append(" ").append(year).append("\n\n");
+            StringBuilder report = new StringBuilder();
+            report.append("Wellness Report - ").append(monthNames[month]).append(" ").append(year).append("\n\n");
 
-        for (DayEntry entry : entries) {
-            try {
-                String[] parts = entry.date.split("/");
-                int entryMonth = Integer.parseInt(parts[0]) - 1;
-                int entryYear = Integer.parseInt(parts[2]);
+            for (DayEntry entry : entries) {
+                try {
+                    String[] parts = entry.date.split("/");
+                    int entryMonth = Integer.parseInt(parts[0]) - 1;
+                    int entryYear = Integer.parseInt(parts[2]);
 
-                if (entryMonth == month && entryYear == year) {
-                    report.append("📅 ").append(entry.date).append("\n");
-                    report.append("• Mood: ").append(entry.mood).append("\n");
-                    report.append("• Sleep: ").append(entry.sleepHours).append("h ").append(entry.sleepMinutes).append("m\n");
-                    report.append("• Water: ").append(entry.waterOunces).append(" oz\n");
+                    if (entryMonth == month && entryYear == year) {
+                        report.append("📅 ").append(entry.date).append("\n");
+                        report.append("• Mood: ").append(entry.mood).append("\n");
+                        report.append("• Sleep: ").append(entry.sleepHours).append("h ").append(entry.sleepMinutes).append("m\n");
+                        report.append("• Water: ").append(entry.waterOunces).append(" oz\n");
 
-                    // Add Journal
-                    if (entry.journal != null && !entry.journal.trim().isEmpty()) {
-                        report.append("• Journal: ").append(entry.journal).append("\n");
-                    }
-
-                    // Meals
-                    List<MealEntry> meals = db.mealEntryDao().getMealsForDate(entry.date);
-                    if (!meals.isEmpty()) {
-                        report.append("• Meals:\n");
-                        for (MealEntry meal : meals) {
-                            report.append("   - ").append(meal.mealType).append(" at ").append(meal.timeEaten)
-                                    .append(": ").append(meal.calories).append(" cal\n");
+                        if (entry.journal != null && !entry.journal.trim().isEmpty()) {
+                            report.append("• Journal: ").append(entry.journal).append("\n");
                         }
-                    }
 
-                    // Exercises
-                    List<ExerciseEntry> exercises = db.exerciseEntryDao().getExercisesForDate(entry.date);
-                    if (!exercises.isEmpty()) {
-                        report.append("• Exercises:\n");
-                        for (ExerciseEntry ex : exercises) {
-                            report.append("   - ").append(ex.duration).append(" mins (").append(ex.intensity).append(")\n");
+                        List<MealEntry> meals = db.mealEntryDao().getMealsForDate(entry.date);
+                        if (!meals.isEmpty()) {
+                            report.append("• Meals:\n");
+                            for (MealEntry meal : meals) {
+                                report.append("   - ").append(meal.mealType).append(" at ").append(meal.timeEaten)
+                                        .append(": ").append(meal.calories).append(" cal\n");
+                            }
                         }
-                    }
 
-                    report.append("\n"); // spacing between days
+                        List<ExerciseEntry> exercises = db.exerciseEntryDao().getExercisesForDate(entry.date);
+                        if (!exercises.isEmpty()) {
+                            report.append("• Exercises:\n");
+                            for (ExerciseEntry ex : exercises) {
+                                report.append("   - ").append(ex.duration).append(" mins (").append(ex.intensity).append(")\n");
+                            }
+                        }
+
+                        report.append("\n");
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
                 }
-            } catch (Exception e) {
-                e.printStackTrace();
             }
-        }
 
-        return report.toString();
+            callback.accept(report.toString()); // Pass result back to caller
+        });
     }
-
     private void exportReportToPDF(String reportContent) {
         String fileName = "Wellness_Report_" + (currentMonth + 1) + "_" + currentYear + ".pdf";
 
         PdfDocument document = new PdfDocument();
         Paint paint = new Paint();
+        paint.setTextSize(12);
+
+        int pageWidth = 595;
+        int pageHeight = 842;
+        int x = 40;
+        int y = 50;
+        int lineHeight = (int) (paint.descent() - paint.ascent()) + 5;
+        int maxY = pageHeight - 50;
+        int pageNumber = 1;
+
         PdfDocument.PageInfo pageInfo = new PdfDocument.PageInfo.Builder(595, 842, 1).create(); // A4 size
         PdfDocument.Page page = document.startPage(pageInfo);
         Canvas canvas = page.getCanvas();
 
-        int x = 40, y = 50;
         for (String line : reportContent.split("\n")) {
+            if (y + lineHeight > maxY) {
+                document.finishPage(page);
+                pageNumber++;
+                pageInfo = new PdfDocument.PageInfo.Builder(pageWidth, pageHeight, pageNumber).create();
+                page = document.startPage(pageInfo);
+                canvas = page.getCanvas();
+                y = 50; // Reset Y for new page
+            }
+
             canvas.drawText(line, x, y, paint);
-            y += 20;
-            if (y > 800) break; // Simple 1-page overflow check
+            y += lineHeight;
         }
 
         document.finishPage(page);
@@ -304,7 +323,6 @@ public class MainActivity extends AppCompatActivity {
             document.writeTo(fos);
             Toast.makeText(this, "PDF saved: " + path.getAbsolutePath(), Toast.LENGTH_LONG).show();
 
-            // Optionally open the PDF
             Intent intent = new Intent(Intent.ACTION_VIEW);
             intent.setDataAndType(FileProvider.getUriForFile(this, getPackageName() + ".provider", path), "application/pdf");
             intent.setFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
